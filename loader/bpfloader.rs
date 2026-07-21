@@ -330,7 +330,13 @@ const FILE_ARR: &[BpfFileDesc] = &[
     },
     BpfFileDesc {
         filename: "/system/etc/bpf/bpfRingbufProg.bpf",
-        critical: true,
+        // IchthysOS/AOSP-17 a52sxq bringup: this is a BPF ring-buffer SELF-TEST program.
+        // The A52s is permanently on Samsung's kernel 5.4, which has NO BPF ringbuf
+        // support (BPF_MAP_TYPE_RINGBUF is a 5.8 feature), so this map fails to create
+        // (EINVAL) and critical=true made the platform bpfloader panic() -> SIGABRT ->
+        // init reboot loop. Demote to non-critical (it's only a self-test; the real
+        // memevents/lmkd programs are already non-critical and fall back to PSI).
+        critical: false,
         skip_on_user: true,
         maps: &[MapDesc::new(GID_ROOT, PERM_GRW, "test_ringbuf")],
         progs: &[ProgDesc::new(GID_ROOT, "skfilter_ringbuf_test")],
